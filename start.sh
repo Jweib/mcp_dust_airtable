@@ -1,21 +1,9 @@
 #!/bin/sh
 set -eu
 
-# Emplacement type "secret"
-mkdir -p /etc/secrets
+# Recrée le fichier de config si tu es sur Railway (Option A/B qu’on a vue)
+# Ici on suppose qu'il est déjà à /etc/secrets/config.json
+[ -f /etc/secrets/config.json ] || { echo "FATAL: /etc/secrets/config.json manquant"; exit 2; }
 
-# Reconstituer /etc/secrets/config.json depuis la variable base64
-if [ -n "${CONFIG_JSON_B64:-}" ]; then
-  echo "$CONFIG_JSON_B64" | base64 -d > /etc/secrets/config.json
-else
-  echo "FATAL: CONFIG_JSON_B64 manquant"; exit 2
-fi
-
-PORT="${PORT:-8080}"
-PREFIX="${PREFIX:-/airtable/}"
-
-echo "--- starting mcp-proxy on 0.0.0.0:${PORT} (prefix ${PREFIX})"
 exec /usr/local/bin/mcp-proxy \
-  --config /etc/secrets/config.json \
-  --http "0.0.0.0:${PORT}" \
-  --path "${PREFIX}"
+  --config /etc/secrets/config.json
