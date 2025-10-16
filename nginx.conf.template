@@ -6,15 +6,15 @@ http {
     listen ${PORT};
     server_name _;
 
-    # Health check Render → 200 stable
+    # Health check Render
     location = /healthz {
       return 200;
     }
 
-    # Dust POST sur "/" → on réécrit vers /mcp puis on proxifie sans URI
+    # Dust POST sur "/" → on réécrit vers /mcp puis on proxifie SANS URI
     location = / {
       rewrite ^/$ /mcp break;
-      proxy_pass http://127.0.0.1:9090;
+      proxy_pass http://127.0.0.1:8080;
       proxy_http_version 1.1;
       proxy_set_header Host $host;
       proxy_set_header Connection "";
@@ -22,10 +22,10 @@ http {
       proxy_send_timeout 300s;
     }
 
-    # Endpoints explicites (tests manuels), on réécrit vers /airtable/* avant proxy_pass
+    # Endpoints explicites (tests manuels) → rewrite vers /airtable/* puis proxy sans URI
     location = /mcp {
       rewrite ^ /airtable/mcp break;
-      proxy_pass http://127.0.0.1:9090;
+      proxy_pass http://127.0.0.1:8080;
       proxy_http_version 1.1;
       proxy_set_header Host $host;
       proxy_set_header Connection "";
@@ -35,7 +35,7 @@ http {
 
     location = /messages {
       rewrite ^ /airtable/messages break;
-      proxy_pass http://127.0.0.1:9090;
+      proxy_pass http://127.0.0.1:8080;
       proxy_http_version 1.1;
       proxy_set_header Host $host;
       proxy_set_header Connection "";
@@ -45,7 +45,7 @@ http {
 
     location = /sse {
       rewrite ^ /airtable/sse break;
-      proxy_pass http://127.0.0.1:9090;
+      proxy_pass http://127.0.0.1:8080;
       proxy_http_version 1.1;
       proxy_set_header Host $host;
       proxy_set_header Connection "";
@@ -53,9 +53,9 @@ http {
       proxy_send_timeout 300s;
     }
 
-    # Tout /airtable/* passe tel quel (pas besoin de réécriture)
+    # Tout /airtable/* passe tel quel vers le proxy en 8080
     location /airtable/ {
-      proxy_pass http://127.0.0.1:9090;
+      proxy_pass http://127.0.0.1:8080;
       proxy_http_version 1.1;
       proxy_set_header Host $host;
       proxy_set_header Connection "";
