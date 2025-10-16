@@ -1,20 +1,21 @@
-# Stage 1 : on récupère le binaire du proxy MCP (HTTP bridge)
+# Stage 1 : récupérer le binaire du MCP proxy
 FROM ghcr.io/tbxark/mcp-proxy:latest AS proxy
 
-# Stage 2 : front HTTP Nginx
+# Stage 2 : Nginx en front
 FROM nginx:alpine
 
-# On ajoute le binaire mcp-proxy
+# Binaire MCP proxy
 COPY --from=proxy /main /usr/local/bin/mcp-proxy
 
-# Template Nginx (on doit templater le $PORT de Render)
-COPY nginx.conf /etc/nginx/templates/default.conf.template
+# Notre conf Nginx (template avec ${PORT})
+COPY nginx.conf.template /etc/nginx/nginx.conf.template
 
-# Render injecte $PORT au runtime
+# Render expose $PORT ; on fait écouter Nginx dessus
 ENV PORT=8080
 EXPOSE 8080
 
-# 1) Lance le MCP proxy en interne sur 9090
-# 2) Génère la conf Nginx en substituant $PORT
-# 3) Lance Nginx en foreground
-CMD ["/bin/sh","-c","/usr/local/bin/mcp-proxy --config /etc/secrets/config.json & exec nginx -g 'daemon off;'"]
+# Démarrage :
+# 1) MCP proxy sur 127.0.0.1:8080 (on force PORT=8080 pour être sûr)
+# 2) On génère /etc/nginx/nginx.conf depuis le template (substitution ${PORT})
+# 3) On lance Nginx en foreground
+CMD ["/bin/sh","-c","PORT=8080 /usr/local/bin/mcp-proxy --config /etc/secrets/config.json & envsubst '$PORT' < /etc/nginx/nginx.conf.template > /etc/nginx/nginx.conf && exec nginx -g 'daemon off;'"]
