@@ -31,4 +31,7 @@ if [ ! -s /etc/secrets/config.json ]; then
 fi
 
 echo "--- launching mcp-proxy with /etc/secrets/config.json"
+echo '--- ports listening:'
+ss -ltn || true
+
 exec /usr/local/bin/mcp-proxy --config /etc/secrets/config.json
