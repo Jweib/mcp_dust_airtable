@@ -27,8 +27,8 @@ CMD ["/bin/sh","-c","set -eux; \
   echo '--- secrets:'; ls -l /etc/secrets || true; \
   echo '--- writing /etc/nginx/nginx.conf from template'; \
   envsubst '$PORT' < /etc/nginx/nginx.conf.template > /etc/nginx/nginx.conf; \
-  echo '--- starting mcp-proxy on :9090'; \
-  PORT=9090 /usr/local/bin/mcp-proxy --config /etc/secrets/config.json 2>&1 & \
+  echo '--- starting mcp-proxy on :8080 (default)'; \
+  /usr/local/bin/mcp-proxy --config /etc/secrets/config.json 2>&1 & \
   sleep 1; \
   echo '--- ps:'; ps aux | grep mcp-proxy | grep -v grep || true; \
   echo '--- starting nginx'; \
