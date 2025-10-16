@@ -1,8 +1,7 @@
-# nginx.conf complet (on ne garde pas la conf par défaut)
+# nginx.conf complet (pas d'include conf.d)
 events {}
 
 http {
-  # Server unique pour Render
   server {
     listen ${PORT};
     server_name _;
@@ -12,9 +11,9 @@ http {
       return 200;
     }
 
-    # Tout le reste: on passe au MCP proxy (il doit renvoyer JSON à la racine)
+    # Tout le reste → mcp-proxy (qui renvoie JSON à la racine pour la discovery Dust)
     location / {
-      proxy_pass http://127.0.0.1:8080;
+      proxy_pass http://127.0.0.1:9090;
       proxy_http_version 1.1;
       proxy_set_header Host $host;
       proxy_set_header Connection "";
