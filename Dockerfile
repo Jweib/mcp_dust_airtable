@@ -18,4 +18,11 @@ EXPOSE 8080
 # 1) MCP proxy sur 127.0.0.1:8080 (on force PORT=8080 pour être sûr)
 # 2) On génère /etc/nginx/nginx.conf depuis le template (substitution ${PORT})
 # 3) On lance Nginx en foreground
-CMD ["/bin/sh","-c","PORT=8080 /usr/local/bin/mcp-proxy --config /etc/secrets/config.json & envsubst '$PORT' < /etc/nginx/nginx.conf.template > /etc/nginx/nginx.conf && exec nginx -g 'daemon off;'"]
+CMD ["/bin/sh","-c","set -eux; \
+  echo '--- secrets:'; ls -l /etc/secrets || true; \
+  echo '--- starting mcp-proxy on :9090'; \
+  PORT=9090 /usr/local/bin/mcp-proxy --config /etc/secrets/config.json 2>&1 & \
+  sleep 1; \
+  echo '--- ps:'; ps aux | grep mcp-proxy | grep -v grep || true; \
+  echo '--- starting nginx'; \
+  exec nginx -g 'daemon off;'"]
