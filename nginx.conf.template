@@ -6,28 +6,26 @@ http {
     listen ${PORT};
     server_name _;
 
-    # Health check Render
-    location = /healthz { return 200; }
-
-    # Dust POST sur "/" → route vers /mcp amont
-    location = / {
-      if ($request_method = POST) {
-        proxy_pass http://127.0.0.1:9090/mcp;
-        proxy_http_version 1.1;
-        proxy_set_header Host $host;
-        proxy_set_header Connection "";
-        proxy_read_timeout 300s;
-        proxy_send_timeout 300s;
-        break;
-      }
-      # GET / (navigateur) → message lisible (évite les 502)
-      return 200 "MCP Airtable is live. Clients should POST / (mapped to /mcp) or use /mcp, /messages, /sse, /airtable/.\n";
-      add_header Content-Type text/plain;
+    # Health check Render → 200 stable
+    location = /healthz {
+      return 200;
     }
 
-    # Endpoints explicites (tests manuels)
+    # Dust POST sur "/" → on réécrit vers /mcp puis on proxifie sans URI
+    location = / {
+      rewrite ^/$ /mcp break;
+      proxy_pass http://127.0.0.1:9090;
+      proxy_http_version 1.1;
+      proxy_set_header Host $host;
+      proxy_set_header Connection "";
+      proxy_read_timeout 300s;
+      proxy_send_timeout 300s;
+    }
+
+    # Endpoints explicites (tests manuels), on réécrit vers /airtable/* avant proxy_pass
     location = /mcp {
-      proxy_pass http://127.0.0.1:9090/airtable/mcp;
+      rewrite ^ /airtable/mcp break;
+      proxy_pass http://127.0.0.1:9090;
       proxy_http_version 1.1;
       proxy_set_header Host $host;
       proxy_set_header Connection "";
@@ -36,7 +34,8 @@ http {
     }
 
     location = /messages {
-      proxy_pass http://127.0.0.1:9090/airtable/messages;
+      rewrite ^ /airtable/messages break;
+      proxy_pass http://127.0.0.1:9090;
       proxy_http_version 1.1;
       proxy_set_header Host $host;
       proxy_set_header Connection "";
@@ -45,7 +44,8 @@ http {
     }
 
     location = /sse {
-      proxy_pass http://127.0.0.1:9090/airtable/sse;
+      rewrite ^ /airtable/sse break;
+      proxy_pass http://127.0.0.1:9090;
       proxy_http_version 1.1;
       proxy_set_header Host $host;
       proxy_set_header Connection "";
@@ -53,8 +53,9 @@ http {
       proxy_send_timeout 300s;
     }
 
+    # Tout /airtable/* passe tel quel (pas besoin de réécriture)
     location /airtable/ {
-      proxy_pass http://127.0.0.1:9090/airtable/;
+      proxy_pass http://127.0.0.1:9090;
       proxy_http_version 1.1;
       proxy_set_header Host $host;
       proxy_set_header Connection "";
