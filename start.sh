@@ -1,9 +1,34 @@
 #!/bin/sh
 set -eu
 
-# Recrée le fichier de config si tu es sur Railway (Option A/B qu’on a vue)
-# Ici on suppose qu'il est déjà à /etc/secrets/config.json
-[ -f /etc/secrets/config.json ] || { echo "FATAL: /etc/secrets/config.json manquant"; exit 2; }
+mkdir -p /etc/secrets
 
-exec /usr/local/bin/mcp-proxy \
-  --config /etc/secrets/config.json
+write_config() {
+  if [ -n "${CONFIG_JSON_B64:-}" ]; then
+    # log debug safe (longueur, pas le contenu)
+    echo "--- CONFIG_JSON_B64 présent (len=$(printf "%s" "$CONFIG_JSON_B64" | wc -c))"
+    echo "$CONFIG_JSON_B64" | base64 -d > /etc/secrets/config.json
+    return 0
+  fi
+
+  if [ -n "${CONFIG_JSON_RAW:-}" ]; then
+    echo "--- CONFIG_JSON_RAW présent (len=$(printf "%s" "$CONFIG_JSON_RAW" | wc -c))"
+    # pas d'echo (risque d’interpréter \n), on passe par printf
+    printf '%s' "$CONFIG_JSON_RAW" > /etc/secrets/config.json
+    return 0
+  fi
+
+  echo "FATAL: ni CONFIG_JSON_B64 ni CONFIG_JSON_RAW n'est défini"
+  exit 2
+}
+
+write_config
+
+# sanity check très léger
+if [ ! -s /etc/secrets/config.json ]; then
+  echo "FATAL: /etc/secrets/config.json vide"
+  exit 2
+fi
+
+echo "--- launching mcp-proxy with /etc/secrets/config.json"
+exec /usr/local/bin/mcp-proxy --config /etc/secrets/config.json
