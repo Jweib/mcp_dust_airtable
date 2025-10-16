@@ -1,9 +1,0 @@
-:{$PORT}
-# Health check Render
-respond /healthz 200
-
-# MCP Airtable exposé sous /airtable/
-reverse_proxy /airtable/* 127.0.0.1:9090
-
-# (optionnel) tout le reste vers le proxy (pratique pour débug)
-reverse_proxy /* 127.0.0.1:9090
